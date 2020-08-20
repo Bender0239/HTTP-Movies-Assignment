@@ -6,49 +6,57 @@ import { useParams, useHistory } from "react-router-dom";
 
 
 const UpdateMovie = (props) => {
-    const {id} = useParams()
-    const movieToEdit = props.movies[id] 
-    console.log(movieToEdit)
-
-
-        const preLoadedValues = {
-            title: movieToEdit.title,
-            director: movieToEdit.director,
-            metascore: movieToEdit.metascore,
-            stars: movieToEdit.stars
+    
+    const {refetch, setRefetch} = props
+    const history = useHistory()
+    const { id } = useParams()
+	const movieToEdit = props.movies[id] || {}
+	const { register, handleSubmit, setValue } = useForm()
+	useEffect(
+		() => {
+			setValue('title', movieToEdit.title)
+            setValue('director', movieToEdit.director)
+            setValue('metascore', movieToEdit.metascore)
+            setValue('stars', movieToEdit.stars)
+		},
+		[ movieToEdit ]
+	)
+    
+    const onSubmit = (data) => {
+        const updatedMovie = {
+            title: data.title,
+            director: data.director,
+            metascore: data.metascore,
+            stars: [data.stars],
+            id: `${id}`
         }
-            const {register, handleSubmit} = useForm({
-                defaultValues: preLoadedValues || {}
+        
+        axios.put(`http://localhost:5000/api/movies/${id}`, updatedMovie)
+            .then((res) => {
+                console.log(res)
+                setRefetch(!refetch)
+                history.push('/')
             })
-    const [movie, setMovie] = useState()
-    
-    // useEffect(() => {
-    //     axios.get(`http://localhost:5000/api/movies/${id}`)
-    //         .then(res => {
-    //             setMovie(res.data)
-    //         })
-    //         .catch(err => {
-    //             console.log(err)
-    //         })
-    // },[id])
-    
-    // const onSubmit = (data) => {
-    //     const updatedMovie = {
-    //         title: data.title,
-    //         director: data.director,
-    //         metascore: data.metascore,
-    //         stars: data.stars,
-    //         id: `${id}`
-    //     }
-    //     console.log(updatedMovie)
-    // }
-
-
+            .catch((err) => {
+                console.log(err)
+            })
+    }
+    const handleDelete = () => {
+        axios.delete(`http://localhost:5000/api/movies/${id}`)
+        .then((res) => {
+            console.log(res)
+            setRefetch(!refetch)
+            history.push('/')
+        })
+        .catch(err => {
+            console.log(err)
+        })
+    }
     
     return (
         <div>
             <h1>Update Movie Form</h1>
-            <form onSubmit={handleSubmit()}>
+            <form onSubmit={handleSubmit(onSubmit)}>
                 <label>Title:&nbsp;
                     <input 
                         type="text"
@@ -83,6 +91,7 @@ const UpdateMovie = (props) => {
                 </label>
                 <button>Update Movie</button>
             </form>
+            <button onClick={handleDelete}>Delete Movie</button>
         </div>
     )
 }
